@@ -1,5 +1,5 @@
 import numpy as np
-
+from tqdm import trange
 from gym_microrts import microrts_ai
 from gym_microrts.envs.vec_env import MicroRTSGridModeVecEnv
 
@@ -9,10 +9,10 @@ from gym_microrts.envs.vec_env import MicroRTSGridModeVecEnv
 
 envs = MicroRTSGridModeVecEnv(
     num_selfplay_envs=2,
-    num_bot_envs=1,
+    num_bot_envs=0,#1,
     max_steps=2000,
     render_theme=2,
-    ai2s=[microrts_ai.coacAI for _ in range(1)],
+    ai2s=[], #[microrts_ai.coacAI for _ in range(1)],
     map_paths=["maps/16x16/basesWorkers16x16.xml"],
     reward_weight=np.array([10.0, 1.0, 1.0, 0.2, 1.0, 4.0]),
 )
@@ -38,12 +38,13 @@ envs.action_space.seed(0)
 envs.reset()
 nvec = envs.action_space.nvec
 
-for i in range(10000):
-    # envs.render()
+for i in trange(10000):
+    envs.render()
     action_mask = envs.get_action_mask()
     action_mask = action_mask.reshape(-1, action_mask.shape[-1])
-    action_mask[action_mask == 0] = -9e8
+    action_mask[action_mask == 0] = False #-9e8
     # sample valid actions
+    print( np.array(action_mask).shape)
     action = np.concatenate(
         (
             sample(action_mask[:, 0:6]),  # action type
@@ -57,7 +58,10 @@ for i in range(10000):
         ),
         axis=1,
     )
+    #print('action', np.array(action).shape)
+    action = np.array([action,action])
     # doing the following could result in invalid actions
     # action = np.array([envs.action_space.sample()])
     next_obs, reward, done, info = envs.step(action)
+    #print(reward)
 envs.close()
